@@ -2,7 +2,7 @@ name: Deploy to Dev
 
 on:
   workflow_run:
-    workflows: [".NET CI"]  # Must match EXACTLY the name in `dotnet.yml`
+    workflows: [".NET"]  # Must match EXACTLY the name in `dotnet.yml`
     branches: [master]
     types:
       - completed
