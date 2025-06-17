@@ -1,41 +1,44 @@
-name: Deploy to Dev Branch
+name: Deploy to Dev
 
 on:
   workflow_run:
-    workflows: ["CI"]  # Must match the name of your main workflow exactly
+    workflows: [".NET"]  # Must match EXACTLY the name in dotnet.yml
     branches: [master]
     types:
       - completed
 
 jobs:
-  deploy:
+  deploy-to-dev:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
-    
     steps:
       - name: Checkout Dev Branch
         uses: actions/checkout@v4
         with:
           ref: dev
-          fetch-depth: 0  # Important for merge operations
-          
+          fetch-depth: 0  # Crucial for merge operations
+
       - name: Download Artifacts
         uses: actions/download-artifact@v3
         with:
           name: build-artifacts
           path: .
-          
-      - name: Merge Changes from Master
+
+      - name: Merge from Master
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           git fetch origin master
           git merge origin/master --no-edit
-          
+
       - name: Commit and Push Changes
         run: |
           git add .
-          git diff-index --quiet HEAD || git commit -m "Auto-merge from master and update artifacts"
-          git push origin dev
+          if git diff-index --quiet HEAD; then
+            echo "No changes to commit"
+          else
+            git commit -m "Auto-update from master build ${{ github.run_id }}"
+            git push origin dev
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
