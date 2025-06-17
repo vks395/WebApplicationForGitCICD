@@ -25,12 +25,17 @@ jobs:
     - name: Setup .NET SDK
       uses: actions/setup-dotnet@v4 # Action to set up the .NET SDK
       with:
-        dotnet-version: '8.0.x' # Specify .NET 8.0 version as requested
+        # Changed to 5.0.x as your project's assets file indicates a 'net5.0' target.
+        # If you intend to upgrade your project to .NET 8.0, you will need to update
+        # your WebApplication1.csproj to target 'net8.0' instead.
+        dotnet-version: '5.0.x'
 
     - name: Restore dependencies
       run: dotnet restore WebApplication1.sln # Restore NuGet packages for the solution
 
     - name: Build application
+      # Removed '--output' option as it's not supported when building a solution,
+      # which caused the NETSDK1194 warning. Build output is handled by 'publish'.
       run: dotnet build WebApplication1.sln --no-restore --configuration Release # Build the application in Release configuration
 
     - name: Run tests
@@ -40,6 +45,9 @@ jobs:
     - name: Publish application
       # This will create a deployable output in the 'publish/linux-x64' directory.
       # Adjusted runtime to linux-x64 for Ubuntu runner.
+      # NOTE: If you continue to see NETSDK1047 error, you might need to
+      # add <RuntimeIdentifiers>linux-x64</RuntimeIdentifiers> to a <PropertyGroup>
+      # in your WebApplication1.csproj file to support self-contained publishing for this runtime.
       run: dotnet publish WebApplication1.sln --no-build --configuration Release -o publish/linux-x64 --runtime linux-x64 --self-contained true
 
     - name: Upload Build Artifacts
