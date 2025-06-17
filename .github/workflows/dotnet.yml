@@ -1,92 +1,28 @@
-# This workflow will build a .NET project, publish it, and then merge changes
-# from the 'master' branch into the 'dev' branch within the same repository.
+# This workflow will build a .NET project
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
 
-name: .NET CI/CD with Auto-Merge to Dev
+name: .NET
 
 on:
   push:
-    branches: [ "master" ] # Trigger on pushes to the 'master' branch
+    branches: [ "master" ]
   pull_request:
-    branches: [ "master" ] # Trigger on pull requests targeting the 'master' branch
+    branches: [ "master" ]
 
 jobs:
-  build-and-publish-and-merge: # Renamed job to reflect new responsibilities
-    # Changed from 'ubuntu-latest' to 'ubuntu-20.04' because 'libssl1.0-dev'
-    # is not available on newer Ubuntu versions (e.g., 22.04+).
-    # .NET 5.0 often requires older OpenSSL libraries.
-    runs-on: ubuntu-20.04
-    permissions:
-      contents: write # Grant write permission to the GITHUB_TOKEN for merge operations
+  build:
+
+    runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4 # Checkout the repository content
+    - uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
       with:
-        fetch-depth: 0 # Fetch all history for merging operations
-
-    - name: Setup .NET SDK
-      uses: actions/setup-dotnet@v4 # Action to set up the .NET SDK
-      with:
-        # Keeping 5.0.x as your project's assets file indicates a 'net5.0' target.
-        # If you intend to upgrade your project to .NET 8.0, you will need to update
-        # your WebApplication1.csproj to target 'net8.0' instead.
-        dotnet-version: '5.0.x'
-
-    - name: Install libssl1.0-dev
-      # This step installs a compatible OpenSSL library for .NET 5.0 on Ubuntu.
-      # This is crucial for 'dotnet restore' and other operations that require libssl.
-      run: sudo apt-get update && sudo apt-get install -y libssl1.0-dev
-
+        dotnet-version: 8.0.x
     - name: Restore dependencies
-      run: dotnet restore WebApplication1.sln # Restore NuGet packages for the solution
-
-    - name: Build application
-      # Removed '--output' option as it's not supported when building a solution,
-      # which caused the NETSDK1194 warning. Build output is handled by 'publish'.
-      run: dotnet build WebApplication1.sln --no-restore --configuration Release # Build the application in Release configuration
-
-    - name: Run tests
-      # Optional: Uncomment and adjust if your project includes test projects and requires a specific test project path
-      run: dotnet test --no-build --verbosity normal # Run tests without rebuilding
-
-    - name: Publish application
-      # This will create a deployable output in the 'publish/linux-x64' directory.
-      # Adjusted runtime to linux-x64 for Ubuntu runner.
-      # NOTE: If you continue to see NETSDK1047 error, you might need to
-      # add <RuntimeIdentifiers>linux-x64</RuntimeIdentifiers> to a <PropertyGroup>
-      # in your WebApplication1.csproj file to support self-contained publishing for this runtime.
-      run: dotnet publish WebApplication1.sln --no-build --configuration Release -o publish/linux-x64 --runtime linux-x64 --self-contained true
-
-    - name: Upload Build Artifacts
-      # Uploads the published application as a workflow artifact, useful for deployment.
-      uses: actions/upload-artifact@v4
-      with:
-        name: web-application-publish
-        path: publish/linux-x64 # Path to your published application
-
-    - name: Merge master into dev
-      # This step will only run if all previous steps (build, test, and publish) are successful.
-      if: success()
-      run: |
-        # Configure Git user for commits made by the GitHub Actions bot
-        git config user.name "GitHub Actions Bot"
-        git config user.email "github-actions[bot]@users.noreply.github.com"
-
-        # Checkout the 'dev' branch, creating it if it doesn't exist
-        git checkout dev || git checkout -b dev
-        # Pull the latest changes from the remote 'dev' branch to avoid conflicts
-        git pull origin dev
-        # Merge 'master' into 'dev' with a descriptive commit message
-        git merge master -m "Merge master into dev after successful CI/CD"
-
-        # Optional: Uncomment the following section to add a check for merge conflicts
-        # if git diff --check --exit-code; then
-        #   echo "No merge conflicts detected. Proceeding with push."
-        # else
-        #   echo "Merge conflicts detected. Please resolve manually. Aborting push."
-        #   exit 1
-        # fi
-
-        # Push the merged changes to the 'dev' branch
-        git push origin dev
+      run: dotnet restore
+    - name: Build
+      run: dotnet build --no-restore
+    - name: Test
+      run: dotnet test --no-build --verbosity normal
