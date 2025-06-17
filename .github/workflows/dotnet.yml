@@ -1,28 +1,92 @@
-# This workflow will build a .NET project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
+# This workflow will build and run a .NET 5 Core application on Windows.
+# For more information see: https://docs.github.com/en/actions/automating-your-workflow-with-github-actions/building-and-testing-net
 
-name: .NET
+name: .NET 5 Core CI/CD on Windows
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ main ] # Trigger on pushes to the 'main' branch
   pull_request:
-    branches: [ "master" ]
+    branches: [ main ] # Trigger on pull requests targeting the 'main' branch
 
 jobs:
-  build:
-
-    runs-on: ubuntu-latest
+  build-and-run:
+    runs-on: windows-latest # Specify Windows environment
+    permissions:
+      contents: write # Grant write permission to the GITHUB_TOKEN to allow pushing to 'dev'
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+    - name: Checkout repository
+      uses: actions/checkout@v4 # Checkout the repository content
       with:
-        dotnet-version: 8.0.x
+        fetch-depth: 0 # Fetch all history for merging operations to work correctly
+
+    - name: Setup .NET 5 SDK
+      uses: actions/setup-dotnet@v4 # Action to set up the .NET SDK
+      with:
+        dotnet-version: '5.0.x' # Specify .NET 5.0 version
+
     - name: Restore dependencies
-      run: dotnet restore
-    - name: Build
-      run: dotnet build --no-restore
-    - name: Test
-      run: dotnet test --no-build --verbosity normal
+      run: dotnet restore WebApplication1.sln # Restore NuGet packages for the solution
+
+    - name: Build application
+      run: dotnet build WebApplication1.sln --no-restore --configuration Release # Build the application in Release configuration
+
+    # Optional: Run tests if you have any.
+    # Uncomment this section if your project includes test projects.
+    # - name: Run tests
+    #   run: dotnet test --no-build --configuration Release --verbosity normal
+
+    - name: Publish application
+      # This will create a deployable output in the 'publish/win-x64' directory.
+      run: dotnet publish WebApplication1.sln --no-build --configuration Release -o publish/win-x64 --runtime win-x64 --self-contained true
+
+    - name: Upload Build Artifacts
+      # Uploads the published application as a workflow artifact, useful for deployment.
+      uses: actions/upload-artifact@v4
+      with:
+        name: web-application-publish
+        path: publish/win-x64 # Path to your published application
+
+    - name: Merge main into dev
+      # This step will only run if all previous steps (build and publish) are successful.
+      if: success()
+      run: |
+        # Configure Git user for commits made by the GitHub Actions bot
+        git config user.name "GitHub Actions Bot"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+
+        # Checkout the 'dev' branch, creating it if it doesn't exist
+        git checkout dev || git checkout -b dev
+        # Pull the latest changes from the remote 'dev' branch to avoid conflicts
+        git pull origin dev
+        # Merge 'main' into 'dev' with a descriptive commit message
+        git merge main -m "Merge main into dev after successful CI/CD"
+
+        # Optional: Uncomment the following section to add a check for merge conflicts
+        # if git diff --check --exit-code; then
+        #   echo "No merge conflicts detected. Proceeding with push."
+        # else
+        #   echo "Merge conflicts detected. Please resolve manually. Aborting push."
+        #   exit 1
+        # fi
+
+        # Push the merged changes to the 'dev' branch
+        git push origin dev
+
+    - name: Display build artifacts (optional) - After merge attempt
+      run: |
+        echo "Listing build output directory for verification:"
+        # Lists the contents of the default build output directory.
+        dir bin\Release\net5.0\WebApplication1.dll
+
+    - name: Run the application (basic check - optional) - After merge attempt
+      run: |
+        echo "Attempting to run the application..."
+        # For a web application, this will start the Kestrel server.
+        # For demonstration purposes, we'll just try to execute it and assume it runs briefly.
+        Start-Process dotnet -ArgumentList "bin\Release\net5.0\WebApplication1.dll" -NoNewWindow
+        Start-Sleep -Seconds 10 # Give it a few seconds to start up
+        Write-Host "Application likely started. Check logs for more details."
+      # This step is mainly illustrative; for real testing of a running web app, you'd use
+      # tools like curl/Invoke-WebRequest against a specific port or more robust test frameworks.
