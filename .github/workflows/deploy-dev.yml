@@ -2,7 +2,8 @@ name: Deploy to Dev Branch
 
 on:
   workflow_run:
-    workflows: [".NET CI with Auto-Merge and Upload"]
+    workflows: ["CI"]  # Must match the name of your main workflow exactly
+    branches: [master]
     types:
       - completed
 
@@ -10,22 +11,31 @@ jobs:
   deploy:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
+    
     steps:
-      - uses: actions/checkout@v4
-      - name: Download artifacts
+      - name: Checkout Dev Branch
+        uses: actions/checkout@v4
+        with:
+          ref: dev
+          fetch-depth: 0  # Important for merge operations
+          
+      - name: Download Artifacts
         uses: actions/download-artifact@v3
         with:
           name: build-artifacts
-          path: artifacts
-      - name: Update dev branch
+          path: .
+          
+      - name: Merge Changes from Master
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
-          git fetch origin dev:dev
-          git checkout dev
-          cp -r artifacts/* .
+          git fetch origin master
+          git merge origin/master --no-edit
+          
+      - name: Commit and Push Changes
+        run: |
           git add .
-          git commit -m "Update build artifacts" || echo "No changes to commit"
+          git diff-index --quiet HEAD || git commit -m "Auto-merge from master and update artifacts"
           git push origin dev
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
