@@ -1,0 +1,63 @@
+# This workflow will build and run a .NET 5.0 Core MVC application on Windows.
+# For more information see: https://docs.github.com/en/actions/automating-your-workflow-with-github-actions/building-and-testing-net
+
+name: .NET 5.0 MVC CI/CD on Windows
+
+on:
+  push:
+    branches: [ "main" ] # Trigger on pushes to the 'main' branch
+  pull_request:
+    branches: [ "main" ] # Trigger on pull requests targeting the 'main' branch
+
+jobs:
+  build-and-run: # Renamed job for clarity
+    runs-on: windows-latest # Changed to Windows environment
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4 # Checkout the repository content
+
+    - name: Setup .NET 5 SDK
+      uses: actions/setup-dotnet@v4 # Action to set up the .NET SDK
+      with:
+        dotnet-version: '5.0.x' # Specify .NET 5.0 version
+
+    - name: Restore dependencies
+      # Explicitly restore for the WebApplication1.sln based on your project structure
+      run: dotnet restore WebApplication1.sln
+
+    - name: Build application
+      # Explicitly build the WebApplication1.sln
+      run: dotnet build WebApplication1.sln --no-restore --configuration Release
+
+    # Optional: Run tests if you have any.
+    # If you have test projects within your solution (e.g., WebApplication1.Tests),
+    # uncomment this section to run them.
+    # - name: Run tests
+    #   run: dotnet test WebApplication1.sln --no-build --configuration Release --verbosity normal
+
+    - name: Publish application (optional for deployment)
+      # This step creates a deployable output.
+      # The output will be in the 'publish' directory, suitable for deployment.
+      # You might want to upload this as an artifact in a real CI/CD pipeline.
+      run: dotnet publish WebApplication1.sln --no-build --configuration Release -o publish/win-x64 --runtime win-x64 --self-contained true
+
+    - name: Display published artifacts (optional)
+      run: |
+        echo "Listing published output directory for verification:"
+        dir publish\win-x64
+
+    - name: Run the published application (basic check - optional)
+      # This step is for a very basic check that the application can be started.
+      # It will start the Kestrel server for your MVC application briefly.
+      # For demonstration purposes, we'll just try to execute it and assume it runs briefly.
+      # In a real scenario, you'd have integration tests or deployment steps here.
+      run: |
+        echo "Attempting to run the published application..."
+        # Running the DLL from the published output directory.
+        # Ensure 'WebApplication1.dll' is the correct name of your main executable DLL within the publish folder.
+        Start-Process dotnet -ArgumentList "publish\win-x64\WebApplication1.dll" -NoNewWindow
+        Start-Sleep -Seconds 15 # Give it a bit more time to start up for a web app
+        Write-Host "Application likely started. Check logs for more details in the GitHub Actions run."
+      # This step is mainly illustrative; for real testing of a running web app, you'd use
+      # tools like curl/Invoke-WebRequest against a specific port or more robust test frameworks.
