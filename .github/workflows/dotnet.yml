@@ -12,7 +12,10 @@ on:
 
 jobs:
   build-and-publish-and-merge: # Renamed job to reflect new responsibilities
-    runs-on: ubuntu-latest # Specify Ubuntu environment as requested
+    # Changed from 'ubuntu-latest' to 'ubuntu-20.04' because 'libssl1.0-dev'
+    # is not available on newer Ubuntu versions (e.g., 22.04+).
+    # .NET 5.0 often requires older OpenSSL libraries.
+    runs-on: ubuntu-20.04
     permissions:
       contents: write # Grant write permission to the GITHUB_TOKEN for merge operations
 
@@ -25,15 +28,14 @@ jobs:
     - name: Setup .NET SDK
       uses: actions/setup-dotnet@v4 # Action to set up the .NET SDK
       with:
-        # Changed to 5.0.x as your project's assets file indicates a 'net5.0' target.
+        # Keeping 5.0.x as your project's assets file indicates a 'net5.0' target.
         # If you intend to upgrade your project to .NET 8.0, you will need to update
         # your WebApplication1.csproj to target 'net8.0' instead.
         dotnet-version: '5.0.x'
 
     - name: Install libssl1.0-dev
       # This step installs a compatible OpenSSL library for .NET 5.0 on Ubuntu.
-      # The "No usable version of libssl was found" error indicates a mismatch
-      # between the .NET 5.0 runtime's OpenSSL dependency and the system's OpenSSL version.
+      # This is crucial for 'dotnet restore' and other operations that require libssl.
       run: sudo apt-get update && sudo apt-get install -y libssl1.0-dev
 
     - name: Restore dependencies
