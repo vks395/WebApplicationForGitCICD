@@ -1,17 +1,17 @@
-# This workflow will build and run a .NET 5 Core application on Windows.
+# This workflow will build and run a .NET 5.0 Core MVC application on Windows.
 # For more information see: https://docs.github.com/en/actions/automating-your-workflow-with-github-actions/building-and-testing-net
 
-name: .NET 5 Core CI/CD on Windows
+name: .NET 5.0 MVC CI/CD on Windows
 
 on:
   push:
-    branches: [ main ] # Trigger on pushes to the 'main' branch
+    branches: [ "main" ] # Trigger on pushes to the 'main' branch
   pull_request:
-    branches: [ main ] # Trigger on pull requests targeting the 'main' branch
+    branches: [ "main" ] # Trigger on pull requests targeting the 'main' branch
 
 jobs:
-  build-and-run:
-    runs-on: windows-latest # Specify Windows environment
+  build-and-run: # Renamed job for clarity
+    runs-on: windows-latest # Changed to Windows environment
 
     steps:
     - name: Checkout repository
@@ -23,41 +23,41 @@ jobs:
         dotnet-version: '5.0.x' # Specify .NET 5.0 version
 
     - name: Restore dependencies
-      run: dotnet restore WebApplication1.sln # Restore NuGet packages for the solution, specifically for the WebApplication1.sln
+      # Explicitly restore for the WebApplication1.sln based on your project structure
+      run: dotnet restore WebApplication1.sln
 
     - name: Build application
-      # Building the solution file as identified from the provided image.
-      run: dotnet build WebApplication1.sln --no-restore --configuration Release # Build the application in Release configuration
+      # Explicitly build the WebApplication1.sln
+      run: dotnet build WebApplication1.sln --no-restore --configuration Release
 
     # Optional: Run tests if you have any.
-    # Uncomment this section if your project includes test projects.
+    # If you have test projects within your solution (e.g., WebApplication1.Tests),
+    # uncomment this section to run them.
     # - name: Run tests
-    #   run: dotnet test --no-build --configuration Release --verbosity normal
+    #   run: dotnet test WebApplication1.sln --no-build --configuration Release --verbosity normal
 
-    # Optional: Publish the application for deployment.
-    # This will create a deployable output in the 'publish' directory.
-    # - name: Publish application
-    #   run: dotnet publish --no-build --configuration Release -o publish/win-x64 --runtime win-x64 --self-contained true
+    - name: Publish application (optional for deployment)
+      # This step creates a deployable output.
+      # The output will be in the 'publish' directory, suitable for deployment.
+      # You might want to upload this as an artifact in a real CI/CD pipeline.
+      run: dotnet publish WebApplication1.sln --no-build --configuration Release -o publish/win-x64 --runtime win-x64 --self-contained true
 
-    - name: Display build artifacts (optional)
+    - name: Display published artifacts (optional)
       run: |
-        echo "Listing build output directory for verification:"
-        # Adjusted path to match typical .NET 5 web application build output structure.
-        dir bin\Release\net5.0\WebApplication1.dll # Lists the contents of the default build output directory.
+        echo "Listing published output directory for verification:"
+        dir publish\win-x64
 
-    - name: Run the application (basic check - optional)
+    - name: Run the published application (basic check - optional)
       # This step is for a very basic check that the application can be started.
-      # It assumes your application is a console app or web app that can be run directly.
-      # For a web app, it will start the Kestrel server. You'll likely need to modify this
-      # or run a specific test against it in a real CI/CD pipeline.
+      # It will start the Kestrel server for your MVC application briefly.
+      # For demonstration purposes, we'll just try to execute it and assume it runs briefly.
+      # In a real scenario, you'd have integration tests or deployment steps here.
       run: |
-        echo "Attempting to run the application..."
-        # Running the WebApplication1.dll as identified from the provided image.
-        # For a web application, this will start the Kestrel server.
-        # For demonstration purposes, we'll just try to execute it and assume it runs briefly.
-        # In a real scenario, you'd have integration tests or deployment steps here.
-        Start-Process dotnet -ArgumentList "bin\Release\net5.0\WebApplication1.dll" -NoNewWindow
-        Start-Sleep -Seconds 10 # Give it a few seconds to start up
-        Write-Host "Application likely started. Check logs for more details."
+        echo "Attempting to run the published application..."
+        # Running the DLL from the published output directory.
+        # Ensure 'WebApplication1.dll' is the correct name of your main executable DLL within the publish folder.
+        Start-Process dotnet -ArgumentList "publish\win-x64\WebApplication1.dll" -NoNewWindow
+        Start-Sleep -Seconds 15 # Give it a bit more time to start up for a web app
+        Write-Host "Application likely started. Check logs for more details in the GitHub Actions run."
       # This step is mainly illustrative; for real testing of a running web app, you'd use
       # tools like curl/Invoke-WebRequest against a specific port or more robust test frameworks.
