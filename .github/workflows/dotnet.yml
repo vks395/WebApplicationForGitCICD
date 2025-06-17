@@ -1,30 +1,31 @@
-# This workflow will build and run a .NET 5 Core application on Windows.
-# For more information see: https://docs.github.com/en/actions/automating-your-workflow-with-github-actions/building-and-testing-net
+# This workflow will build a .NET project, publish it, and then merge changes
+# from the 'master' branch into the 'dev' branch within the same repository.
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
 
-name: .NET 5 Core CI/CD on Windows
+name: .NET CI/CD with Auto-Merge to Dev
 
 on:
   push:
-    branches: [ main ] # Trigger on pushes to the 'main' branch
+    branches: [ "master" ] # Trigger on pushes to the 'master' branch
   pull_request:
-    branches: [ main ] # Trigger on pull requests targeting the 'main' branch
+    branches: [ "master" ] # Trigger on pull requests targeting the 'master' branch
 
 jobs:
-  build-and-run:
-    runs-on: windows-latest # Specify Windows environment
+  build-and-publish-and-merge: # Renamed job to reflect new responsibilities
+    runs-on: ubuntu-latest # Specify Ubuntu environment as requested
     permissions:
-      contents: write # Grant write permission to the GITHUB_TOKEN to allow pushing to 'dev'
+      contents: write # Grant write permission to the GITHUB_TOKEN for merge operations
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4 # Checkout the repository content
       with:
-        fetch-depth: 0 # Fetch all history for merging operations to work correctly
+        fetch-depth: 0 # Fetch all history for merging operations
 
-    - name: Setup .NET 5 SDK
+    - name: Setup .NET SDK
       uses: actions/setup-dotnet@v4 # Action to set up the .NET SDK
       with:
-        dotnet-version: '5.0.x' # Specify .NET 5.0 version
+        dotnet-version: '8.0.x' # Specify .NET 8.0 version as requested
 
     - name: Restore dependencies
       run: dotnet restore WebApplication1.sln # Restore NuGet packages for the solution
@@ -32,24 +33,24 @@ jobs:
     - name: Build application
       run: dotnet build WebApplication1.sln --no-restore --configuration Release # Build the application in Release configuration
 
-    # Optional: Run tests if you have any.
-    # Uncomment this section if your project includes test projects.
-    # - name: Run tests
-    #   run: dotnet test --no-build --configuration Release --verbosity normal
+    - name: Run tests
+      # Optional: Uncomment and adjust if your project includes test projects and requires a specific test project path
+      run: dotnet test --no-build --verbosity normal # Run tests without rebuilding
 
     - name: Publish application
-      # This will create a deployable output in the 'publish/win-x64' directory.
-      run: dotnet publish WebApplication1.sln --no-build --configuration Release -o publish/win-x64 --runtime win-x64 --self-contained true
+      # This will create a deployable output in the 'publish/linux-x64' directory.
+      # Adjusted runtime to linux-x64 for Ubuntu runner.
+      run: dotnet publish WebApplication1.sln --no-build --configuration Release -o publish/linux-x64 --runtime linux-x64 --self-contained true
 
     - name: Upload Build Artifacts
       # Uploads the published application as a workflow artifact, useful for deployment.
       uses: actions/upload-artifact@v4
       with:
         name: web-application-publish
-        path: publish/win-x64 # Path to your published application
+        path: publish/linux-x64 # Path to your published application
 
-    - name: Merge main into dev
-      # This step will only run if all previous steps (build and publish) are successful.
+    - name: Merge master into dev
+      # This step will only run if all previous steps (build, test, and publish) are successful.
       if: success()
       run: |
         # Configure Git user for commits made by the GitHub Actions bot
@@ -60,8 +61,8 @@ jobs:
         git checkout dev || git checkout -b dev
         # Pull the latest changes from the remote 'dev' branch to avoid conflicts
         git pull origin dev
-        # Merge 'main' into 'dev' with a descriptive commit message
-        git merge main -m "Merge main into dev after successful CI/CD"
+        # Merge 'master' into 'dev' with a descriptive commit message
+        git merge master -m "Merge master into dev after successful CI/CD"
 
         # Optional: Uncomment the following section to add a check for merge conflicts
         # if git diff --check --exit-code; then
@@ -73,20 +74,3 @@ jobs:
 
         # Push the merged changes to the 'dev' branch
         git push origin dev
-
-    - name: Display build artifacts (optional) - After merge attempt
-      run: |
-        echo "Listing build output directory for verification:"
-        # Lists the contents of the default build output directory.
-        dir bin\Release\net5.0\WebApplication1.dll
-
-    - name: Run the application (basic check - optional) - After merge attempt
-      run: |
-        echo "Attempting to run the application..."
-        # For a web application, this will start the Kestrel server.
-        # For demonstration purposes, we'll just try to execute it and assume it runs briefly.
-        Start-Process dotnet -ArgumentList "bin\Release\net5.0\WebApplication1.dll" -NoNewWindow
-        Start-Sleep -Seconds 10 # Give it a few seconds to start up
-        Write-Host "Application likely started. Check logs for more details."
-      # This step is mainly illustrative; for real testing of a running web app, you'd use
-      # tools like curl/Invoke-WebRequest against a specific port or more robust test frameworks.
