@@ -1,0 +1,31 @@
+name: Deploy to Dev Branch
+
+on:
+  workflow_run:
+    workflows: [".NET CI with Auto-Merge and Upload"]
+    types:
+      - completed
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: build-artifacts
+          path: artifacts
+      - name: Update dev branch
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git fetch origin dev:dev
+          git checkout dev
+          cp -r artifacts/* .
+          git add .
+          git commit -m "Update build artifacts" || echo "No changes to commit"
+          git push origin dev
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
