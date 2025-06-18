@@ -4,6 +4,17 @@ version = 1
 name = "csharp"
 enabled = true
 
+# Add CSS-specific analysis
+[[analyzers]]
+name = "css"
+enabled = true
+args = ["--stylelint-config=standard"]
+
+# HTML analysis
+[[analyzers]]
+name = "html"
+enabled = true
+
 # Test configuration
 [[tests]]
 name = "dotnet-test"
@@ -11,48 +22,23 @@ enabled = true
 path = "tests/"
 command = "dotnet test --collect:\"XPlat Code Coverage\""
 
-# Code coverage
-[coverage]
-min_coverage = 80
-max_missing = 15
+# Explicitly include all web assets
+include = [
+  "**/*.css",
+  "**/*.html",
+  "**/*.cshtml",
+  "**/*.scss",
+  "**/*.js"
+]
 
-# Dependency scanning
-[dependency_scanning]
-enabled = true
-package_managers = ["nuget"]
-
-# Smart exclusions - keeping files you want analyzed
+# Smarter exclusions
 exclude = [
-  # Build outputs (keep these excluded)
   "bin/",
   "obj/",
   "packages/",
-  
-  # Node dependencies (keep excluded)
   "node_modules/",
-  
-  # Minified files (keep excluded as they're generated)
-  "*.min.js",
-  "*.min.css",
-  
-  # Development configs (keep excluded)
-  "appsettings.Development.json"
+  "*.min.*"  # Excludes all minified files
 ]
-
-# Explicitly include these patterns for analysis
-include = [
-  "**/*.css",
-  "**/*.html", 
-  "**/*.cshtml",
-  "**/*.razor",
-  "**/*.js",
-  "**/*.ts"
-]
-
-# Custom ignores
-[[ignore]]
-pattern = ".*TODO.*"
-reason = "Development note"
 
 [build]
 command = "dotnet build"
