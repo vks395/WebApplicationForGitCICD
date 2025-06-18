@@ -1,22 +1,9 @@
 version = 1
 
+# Valid analyzers for .NET Core
 [[analyzers]]
 name = "csharp"
 enabled = true
-
-[[analyzers]]
-name = "dotnet"
-enabled = true
-
-[[analyzers]]
-name = "security"
-enabled = true
-
-# Enable Roslyn-based code analysis
-[[analyzers]]
-name = "roslyn"
-enabled = true
-args = ["/ruleset:.editorconfig"]
 
 # Test configuration for xUnit/NUnit/MSTest
 [[tests]]
@@ -29,12 +16,6 @@ command = "dotnet test --collect:\"XPlat Code Coverage\""
 [coverage]
 min_coverage = 80
 max_missing = 15
-
-# Security configuration
-[security]
-enable_secrets_check = true
-enable_sast = true
-enable_dependency_scanning = true
 
 # Exclude common .NET directories
 exclude = [
@@ -62,7 +43,7 @@ reason = "Debugging statements"
 command = "dotnet build"
 environment = { DOTNET_CLI_TELEMETRY_OPTOUT = "1" }
 
-# Dependency scanning
+# Dependency scanning (uses csharp analyzer for NuGet)
 [dependency_scanning]
 enabled = true
 package_managers = ["nuget"]
