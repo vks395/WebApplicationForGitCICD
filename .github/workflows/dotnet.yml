@@ -1,28 +1,82 @@
-# This workflow will build a .NET project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
-
-name: .NET
+name: Build and Deploy
 
 on:
   push:
-    branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
+    branches: [master]
+
+permissions:
+  contents: write  # Required for pushing to branches
 
 jobs:
-  build:
-
+  build-and-merge:
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v4
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 8.0.x
-    - name: Restore dependencies
-      run: dotnet restore
-    - name: Build
-      run: dotnet build --no-restore
-    - name: Test
-      run: dotnet test --no-build --verbosity normal
+      # 1. Checkout code with full history
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Get complete history for proper merging
+
+      # 2. Setup .NET environment
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      # 3. Build the application
+      - name: Build
+        run: dotnet build --configuration Release
+
+      # 4. Upload build artifacts
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: bin/Release/
+          retention-days: 1
+
+      # 5. Checkout dev branch
+      - name: Checkout Dev
+        uses: actions/checkout@v4
+        with:
+          ref: dev
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # 6. Merge changes from master
+      - name: Merge from Master
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git fetch origin master
+          git merge origin/master --no-edit --no-ff
+          git status  # Debug output
+
+      # 7. Download build artifacts
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: .
+
+      # 8. Commit and push all changes
+      - name: Update Dev Branch
+        run: |
+          git add .
+          if git diff-index --quiet HEAD; then
+            echo "No changes to commit"
+          else
+            git commit -m "Auto-merge from master (Run ${{ github.run_number }})"
+            git push origin dev
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # 9. Debug output (optional)
+      - name: Verify Changes
+        run: |
+          echo "Current branch:"
+          git branch
+          echo "Recent commits:"
+          git log -n 3 --oneline
+          echo "Files changed:"
+          git diff --name-only HEAD~1
