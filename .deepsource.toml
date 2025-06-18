@@ -1,13 +1,68 @@
 version = 1
 
 [[analyzers]]
-name = "python"
+name = "csharp"
+enabled = true
 
-  [analyzers.meta]
-  runtime_version = "3.x.x"
+[[analyzers]]
+name = "dotnet"
+enabled = true
 
-[[transformers]]
-name = "black"
+[[analyzers]]
+name = "security"
+enabled = true
 
-[[transformers]]
-name = "isort"
+# Enable Roslyn-based code analysis
+[[analyzers]]
+name = "roslyn"
+enabled = true
+args = ["/ruleset:.editorconfig"]
+
+# Test configuration for xUnit/NUnit/MSTest
+[[tests]]
+name = "dotnet-test"
+enabled = true
+path = "tests/"
+command = "dotnet test --collect:\"XPlat Code Coverage\""
+
+# Code coverage settings
+[coverage]
+min_coverage = 80
+max_missing = 15
+
+# Security configuration
+[security]
+enable_secrets_check = true
+enable_sast = true
+enable_dependency_scanning = true
+
+# Exclude common .NET directories
+exclude = [
+  "bin/",
+  "obj/",
+  "packages/",
+  "wwwroot/",
+  "*.min.js",
+  "*.min.css",
+  "appsettings.Development.json",
+  "Migrations/"
+]
+
+# Custom ignore patterns for .NET
+[[ignore]]
+pattern = ".*TODO.*"
+reason = "Development note"
+
+[[ignore]]
+pattern = ".*Debug\\.Assert\\(.*"
+reason = "Debugging statements"
+
+# Build configuration
+[build]
+command = "dotnet build"
+environment = { DOTNET_CLI_TELEMETRY_OPTOUT = "1" }
+
+# Dependency scanning
+[dependency_scanning]
+enabled = true
+package_managers = ["nuget"]
