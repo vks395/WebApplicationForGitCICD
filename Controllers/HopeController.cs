@@ -13,8 +13,6 @@ namespace WebApplication1.Controllers
         {
             return View();
         }
-        StringSplitOptions.Finf();
-
-
+      
     }
 }
