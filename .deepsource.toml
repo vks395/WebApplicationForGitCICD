@@ -2,59 +2,12 @@ version = 1
 
 [[analyzers]]
 name = "python"
-enabled = true
 
-[[analyzers]]
-name = "security"
-enabled = true
-
-[[analyzers]]
-name = "dockerfile"
-enabled = true
+  [analyzers.meta]
+  runtime_version = "3.x.x"
 
 [[transformers]]
 name = "black"
-enabled = true
-args = ["--line-length=88"]
 
 [[transformers]]
 name = "isort"
-enabled = true
-
-# Test configuration
-[[tests]]
-name = "pytest"
-enabled = true
-path = "tests/"
-command = "pytest --cov=./ --cov-report=xml"
-
-# Exclude files/directories from analysis
-exclude = [
-  "migrations/",
-  "venv/",
-  ".venv/",
-  "node_modules/",
-  "*.min.js",
-  "*.min.css",
-  "*.sqlite3",
-  ".gitignore"
-]
-
-# Custom issue patterns to ignore
-[[ignore]]
-pattern = ".*TODO.*"
-reason = "Development note"
-
-[[ignore]]
-pattern = ".*print\\(.*"
-reason = "Temporary debug statement"
-
-# Thresholds for test coverage
-[coverage]
-min_coverage = 80
-max_missing = 10
-
-# Security configuration
-[security]
-enable_secrets_check = true
-enable_sast = true
