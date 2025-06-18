@@ -1,16 +1,13 @@
 version = 1
 
 [[analyzers]]
-name = "csharp"  # Only officially supported .NET analyzer
-enabled = true
+name = "cxx"
 
-[[tests]]
-name = "dotnet-test"
-enabled = true
-path = "tests/"
-command = "dotnet test"
+[[analyzers]]
+name = "sql"
 
-exclude = [
-  "bin/", "obj/", "packages/",
-  "node_modules/", "*.min.*"
-]
+[[analyzers]]
+name = "javascript"
+
+[[analyzers]]
+name = "test-coverage"
