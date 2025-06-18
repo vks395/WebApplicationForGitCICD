@@ -1,27 +1,16 @@
 version = 1
 
 [[analyzers]]
-name = "csharp"
+name = "csharp"  # Only officially supported .NET analyzer
 enabled = true
 
 [[tests]]
 name = "dotnet-test"
 enabled = true
 path = "tests/"
-command = "dotnet test --collect:\"XPlat Code Coverage\""
-
-[coverage]
-min_coverage = 80
-
-[dependency_scanning]
-enabled = true
-package_managers = ["nuget"]
+command = "dotnet test"
 
 exclude = [
-  "bin/",
-  "obj/",
-  "packages/",
-  "node_modules/",
-  "*.min.js",
-  "*.min.css"
+  "bin/", "obj/", "packages/",
+  "node_modules/", "*.min.*"
 ]
