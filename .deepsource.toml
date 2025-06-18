@@ -1,76 +1,41 @@
 version = 1
 
-# .NET Core Analysis
+# Only supported analyzers for .NET
 [[analyzers]]
 name = "csharp"
 enabled = true
 
-# Frontend Analysis (if using Angular/React)
-[[analyzers]]
-name = "typescript"
-enabled = true
-
-[[analyzers]]
-name = "javascript"
-enabled = true
-
-# Infrastructure Analysis
-[[analyzers]]
-name = "dockerfile"
-enabled = true
-
-[[analyzers]]
-name = "yaml"
-enabled = true
-
-# Security Analysis
-[[analyzers]]
-name = "secrets"
-enabled = true
-
-# Test Configuration
+# Test configuration
 [[tests]]
 name = "dotnet-test"
 enabled = true
 path = "tests/"
 command = "dotnet test --collect:\"XPlat Code Coverage\""
 
-# Coverage Settings
+# Code coverage settings
 [coverage]
 min_coverage = 80
 max_missing = 15
 
-# Build Configuration
-[build]
-command = "dotnet build"
-environment = { DOTNET_CLI_TELEMETRY_OPTOUT = "1" }
-
-# Dependency Scanning
+# Dependency scanning (NuGet only)
 [dependency_scanning]
 enabled = true
-package_managers = ["nuget", "npm"]
+package_managers = ["nuget"]
 
 # Exclusions
 exclude = [
-  # .NET
   "bin/",
   "obj/",
   "packages/",
+  "wwwroot/",
   "Migrations/",
-  
-  # Frontend
   "node_modules/",
-  "dist/",
   "*.min.js",
   "*.min.css",
-  
-  # General
-  ".git/",
-  ".github/",
-  ".vscode/"
+  "appsettings.Development.json"
 ]
 
-# Custom ignores
+# Custom ignore patterns
 [[ignore]]
 pattern = ".*TODO.*"
 reason = "Development note"
@@ -78,3 +43,8 @@ reason = "Development note"
 [[ignore]]
 pattern = ".*Debug\\.Assert\\(.*"
 reason = "Debugging statements"
+
+# Build configuration
+[build]
+command = "dotnet build"
+environment = { DOTNET_CLI_TELEMETRY_OPTOUT = "1" }
