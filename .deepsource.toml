@@ -4,41 +4,24 @@ version = 1
 name = "csharp"
 enabled = true
 
-# Add CSS-specific analysis
-[[analyzers]]
-name = "css"
-enabled = true
-args = ["--stylelint-config=standard"]
-
-# HTML analysis
-[[analyzers]]
-name = "html"
-enabled = true
-
-# Test configuration
 [[tests]]
 name = "dotnet-test"
 enabled = true
 path = "tests/"
 command = "dotnet test --collect:\"XPlat Code Coverage\""
 
-# Explicitly include all web assets
-include = [
-  "**/*.css",
-  "**/*.html",
-  "**/*.cshtml",
-  "**/*.scss",
-  "**/*.js"
-]
+[coverage]
+min_coverage = 80
 
-# Smarter exclusions
+[dependency_scanning]
+enabled = true
+package_managers = ["nuget"]
+
 exclude = [
   "bin/",
   "obj/",
   "packages/",
   "node_modules/",
-  "*.min.*"  # Excludes all minified files
+  "*.min.js",
+  "*.min.css"
 ]
-
-[build]
-command = "dotnet build"
