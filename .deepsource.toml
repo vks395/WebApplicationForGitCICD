@@ -1,6 +1,5 @@
 version = 1
 
-# Only supported analyzers for .NET
 [[analyzers]]
 name = "csharp"
 enabled = true
@@ -12,39 +11,48 @@ enabled = true
 path = "tests/"
 command = "dotnet test --collect:\"XPlat Code Coverage\""
 
-# Code coverage settings
+# Code coverage
 [coverage]
 min_coverage = 80
 max_missing = 15
 
-# Dependency scanning (NuGet only)
+# Dependency scanning
 [dependency_scanning]
 enabled = true
 package_managers = ["nuget"]
 
-# Exclusions
+# Smart exclusions - keeping files you want analyzed
 exclude = [
+  # Build outputs (keep these excluded)
   "bin/",
   "obj/",
   "packages/",
-  "wwwroot/",
-  "Migrations/",
+  
+  # Node dependencies (keep excluded)
   "node_modules/",
+  
+  # Minified files (keep excluded as they're generated)
   "*.min.js",
   "*.min.css",
+  
+  # Development configs (keep excluded)
   "appsettings.Development.json"
 ]
 
-# Custom ignore patterns
+# Explicitly include these patterns for analysis
+include = [
+  "**/*.css",
+  "**/*.html", 
+  "**/*.cshtml",
+  "**/*.razor",
+  "**/*.js",
+  "**/*.ts"
+]
+
+# Custom ignores
 [[ignore]]
 pattern = ".*TODO.*"
 reason = "Development note"
 
-[[ignore]]
-pattern = ".*Debug\\.Assert\\(.*"
-reason = "Debugging statements"
-
-# Build configuration
 [build]
 command = "dotnet build"
-environment = { DOTNET_CLI_TELEMETRY_OPTOUT = "1" }
