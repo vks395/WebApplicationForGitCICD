@@ -42,7 +42,8 @@ namespace WebApplication1
             }
             app.UseHttpsRedirection();
             app.UseStaticFiles();
-
+            app.UseResponseCompression();
+            app.UseResponseCaching();
             app.UseRouting();
 
             app.UseAuthorization();
